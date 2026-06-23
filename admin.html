@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Aslam Studioz</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    :root {
+      --bg: #111; --bg2: #1a1a1a; --text: #f0ede8; --muted: #888;
+      --accent: #c9a96e; --border: #2a2a2a; --card: #1e1e1e;
+      --red: #e05050; --green: #5cb85c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', Arial, sans-serif; min-height: 100vh; }
+    a { color: var(--accent); text-decoration: none; }
+
+    /* LOGIN */
+    #loginScreen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 2rem;
+    }
+    .login-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 2.5rem; max-width: 360px; width: 100%; text-align: center;
+    }
+    .login-box h1 { font-size: 1.5rem; font-weight: 400; margin-bottom: 0.5rem; }
+    .login-box p { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+    .login-box input {
+      width: 100%; padding: 0.75rem 1rem; background: var(--bg2);
+      border: 1px solid var(--border); color: var(--text); border-radius: 4px;
+      font-size: 1rem; margin-bottom: 1rem; outline: none;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-error { color: var(--red); font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+
+    /* ADMIN PANEL */
+    #adminPanel { display: none; }
+
+    header {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 400; }
+    header span { color: var(--accent); }
+    .logout-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .admin-nav {
+      display: flex; gap: 0; background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; overflow-x: auto;
+    }
+    .tab-btn {
+      background: none; border: none; color: var(--muted); padding: 1rem 1.5rem;
+      cursor: pointer; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
+      border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    .section-head { margin-bottom: 1.5rem; }
+    .section-head h2 { font-size: 1.3rem; font-weight: 400; margin-bottom: 0.3rem; }
+    .section-head p { color: var(--muted); font-size: 0.85rem; }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: 8px; padding: 2.5rem;
+      text-align: center; cursor: pointer; transition: border-color 0.2s; margin-bottom: 1.5rem;
+    }
+    .upload-area:hover, .upload-area.drag { border-color: var(--accent); }
+    .upload-area p { color: var(--muted); margin-top: 0.5rem; font-size: 0.9rem; }
+    .upload-area .big { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    #fileInput { display: none; }
+
+    .upload-controls {
+      display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem; align-items: end;
+    }
+    .upload-controls select, .upload-controls input {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+      padding: 0.6rem 0.8rem; border-radius: 4px; font-size: 0.9rem; width: 100%; outline: none;
+    }
+    .upload-controls select:focus, .upload-controls input:focus { border-color: var(--accent); }
+
+    .progress-bar {
+      background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 1rem; display: none;
+    }
+    .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+    .upload-status { font-size: 0.85rem; margin-bottom: 1rem; min-height: 1.2em; }
+    .upload-status.ok { color: var(--green); }
+    .upload-status.err { color: var(--red); }
+
+    /* Photo Grid */
+    .photo-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem;
+    }
+    .photo-thumb {
+      position: relative; border-radius: 4px; overflow: hidden; aspect-ratio: 1;
+      background: var(--bg2); border: 1px solid var(--border);
+    }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-thumb .thumb-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: none;
+      align-items: center; justify-content: center; flex-direction: column; gap: 0.5rem;
+    }
+    .photo-thumb:hover .thumb-overlay { display: flex; }
+    .thumb-cat {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.7); color: #fff; font-size: 0.7rem; padding: 4px 6px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .del-btn {
+      background: var(--red); border: none; color: #fff; padding: 0.3rem 0.7rem;
+      border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+    }
+
+    /* Services */
+    .services-list { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+    .service-row {
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 1rem 1.25rem; display: grid; grid-template-columns: 60px 1fr 1fr 1fr auto;
+      gap: 0.75rem; align-items: center;
+    }
+    .service-row input {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+      padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.85rem; width: 100%; outline: none;
+    }
+    .service-row input:focus { border-color: var(--accent); }
+    .icon-input { text-align: center; font-size: 1.4rem; padding: 0.3rem !important; }
+    .del-service { background: none; border: 1px solid var(--border); color: var(--red); width: 2rem; height: 2rem; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    .add-service-btn {
+      background: none; border: 1px dashed var(--border); color: var(--muted);
+      padding: 0.75rem; border-radius: 6px; cursor: pointer; width: 100%;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .add-service-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Theme */
+    .theme-options { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .theme-opt {
+      background: var(--card); border: 2px solid var(--border); border-radius: 8px;
+      padding: 1.5rem 2rem; cursor: pointer; text-align: center; transition: all 0.2s; min-width: 140px;
+    }
+    .theme-opt:hover { border-color: var(--muted); }
+    .theme-opt.selected { border-color: var(--accent); }
+    .theme-opt .t-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+    .theme-opt .t-name { font-size: 0.85rem; color: var(--text); }
+    .theme-opt .t-desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent); border: none; color: #111; padding: 0.65rem 1.5rem;
+      border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 0.05em; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-outline {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+
+    .save-bar {
+      position: sticky; bottom: 0; background: var(--bg2); border-top: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; gap: 1rem; align-items: center;
+    }
+    .save-msg { font-size: 0.85rem; color: var(--green); }
+
+    @media (max-width: 700px) {
+      .service-row { grid-template-columns: 1fr 1fr; }
+      .upload-controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>Aslam <span style="color:var(--accent)">Studioz</span></h1>
+    <p>Admin Panel — Enter password to continue</p>
+    <p class="login-error" id="loginError">Incorrect password. Try again.</p>
+    <input type="password" id="passwordInput" placeholder="Password" />
+    <button class="btn" onclick="doLogin()" style="width:100%">Login</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+  <header>
+    <h1>Aslam <span>Studioz</span> — Admin</h1>
+    <div style="display:flex;gap:1rem;align-items:center">
+      <a href="index.html" style="font-size:0.85rem;color:var(--muted)">← View Site</a>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <button class="tab-btn active" onclick="showTab('photos')">📷 Photos</button>
+    <button class="tab-btn" onclick="showTab('services')">💰 Services</button>
+    <button class="tab-btn" onclick="showTab('theme')">🎨 Theme</button>
+  </nav>
+
+  <!-- PHOTOS TAB -->
+  <div class="tab-content active" id="tab-photos">
+    <div class="section-head">
+      <h2>Manage Photos</h2>
+      <p>Upload photos to Cloudinary — they appear instantly in the gallery.</p>
+    </div>
+
+    <div class="upload-controls">
+      <div>
+        <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:4px">Category</label>
+        <select id="uploadCat">
+          <option value="wedding">Wedding</option>
+          <option value="portrait">Portrait</option>
+          <option value="newborn">Newborn</option>
+          <option value="product">Product</option>
+          <option value="nature">Nature</option>
+          <option value="events">Events</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:4px">Caption (optional)</label>
+        <input type="text" id="uploadCaption" placeholder="e.g. Beach Wedding" />
+      </div>
+      <button class="btn" onclick="document.getElementById('fileInput').click()">+ Choose Photos</button>
+    </div>
+
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div class="big">📁</div>
+      <strong>Click to upload or drag & drop</strong>
+      <p>JPG, PNG, WEBP — Multiple files supported</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" multiple />
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <p class="upload-status" id="uploadStatus"></p>
+
+    <h3 style="font-size:1rem;font-weight:400;margin-bottom:1rem;color:var(--muted)">Uploaded Photos</h3>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+
+  <!-- SERVICES TAB -->
+  <div class="tab-content" id="tab-services">
+    <div class="section-head">
+      <h2>Manage Services & Pricing</h2>
+      <p>Edit service names, descriptions and prices. Changes save instantly.</p>
+    </div>
+    <div class="services-list" id="servicesList"></div>
+    <button class="add-service-btn" onclick="addService()">+ Add Service</button>
+    <div class="save-bar">
+      <button class="btn" onclick="saveServices()">Save Services</button>
+      <span class="save-msg" id="serviceMsg"></span>
+    </div>
+  </div>
+
+  <!-- THEME TAB -->
+  <div class="tab-content" id="tab-theme">
+    <div class="section-head">
+      <h2>Website Theme</h2>
+      <p>Choose how the website looks for visitors.</p>
+    </div>
+    <div class="theme-options">
+      <div class="theme-opt" data-t="auto" onclick="selectTheme('auto')">
+        <span class="t-icon">🔄</span>
+        <div class="t-name">Auto</div>
+        <div class="t-desc">Dark 9PM–6AM, Light rest</div>
+      </div>
+      <div class="theme-opt" data-t="dark" onclick="selectTheme('dark')">
+        <span class="t-icon">🌙</span>
+        <div class="t-name">Always Dark</div>
+        <div class="t-desc">Dark theme 24/7</div>
+      </div>
+      <div class="theme-opt" data-t="light" onclick="selectTheme('light')">
+        <span class="t-icon">☀️</span>
+        <div class="t-name">Always Light</div>
+        <div class="t-desc">Light theme 24/7</div>
+      </div>
+    </div>
+    <div class="save-bar">
+      <button class="btn" onclick="saveTheme()">Save Theme</button>
+      <span class="save-msg" id="themeMsg"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLOUD = 'dsq9sjpe0';
+const UPLOAD_PRESET = 'aslamstudioz_upload'; // You'll set this in Cloudinary
+// NOTE: Replace UPLOAD_PRESET with your actual unsigned upload preset name from Cloudinary Dashboard > Settings > Upload
+
+/* ---- AUTH ---- */
+const PASS_HASH = btoa('ASLAM_PASS_PLACEHOLDER'); // Replace with btoa('yourpassword')
+
+function hashPass(p) { return btoa(p); }
+
+function doLogin() {
+  const val = document.getElementById('passwordInput').value;
+  // Check stored hash
+  const stored = localStorage.getItem('asAdminPass');
+  if (!stored) {
+    // First time - accept and store
+    localStorage.setItem('asAdminPass', hashPass(val));
+    grantAccess();
+    return;
+  }
+  if (hashPass(val) === stored) {
+    grantAccess();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+document.getElementById('passwordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function grantAccess() {
+  sessionStorage.setItem('asLoggedIn', '1');
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  initAdmin();
+}
+
+function logout() {
+  sessionStorage.removeItem('asLoggedIn');
+  location.reload();
+}
+
+if (sessionStorage.getItem('asLoggedIn')) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  initAdmin();
+}
+
+/* ---- TABS ---- */
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ---- INIT ---- */
+function initAdmin() {
+  renderPhotos();
+  renderServices();
+  renderTheme();
+  initUpload();
+}
+
+/* ---- PHOTOS ---- */
+function getPhotos() {
+  return JSON.parse(localStorage.getItem('asPhotos') || '[]');
+}
+function savePhotos(arr) {
+  localStorage.setItem('asPhotos', JSON.stringify(arr));
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photoGrid');
+  const photos = getPhotos();
+  grid.innerHTML = '';
+  if (photos.length === 0) {
+    grid.innerHTML = '<p style="color:var(--muted);font-size:0.9rem">No photos yet. Upload some above!</p>';
+    return;
+  }
+  photos.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = `
+      <img src="${p.url}" alt="${p.caption || p.cat}" loading="lazy" />
+      <div class="thumb-overlay">
+        <button class="del-btn" onclick="deletePhoto(${i})">🗑 Delete</button>
+      </div>
+      <div class="thumb-cat">${p.cat}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function deletePhoto(i) {
+  if (!confirm('Delete this photo?')) return;
+  const photos = getPhotos();
+  photos.splice(i, 1);
+  savePhotos(photos);
+  renderPhotos();
+}
+
+/* ---- UPLOAD ---- */
+function initUpload() {
+  const area = document.getElementById('uploadArea');
+  const input = document.getElementById('fileInput');
+
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag'); });
+  area.addEventListener('dragleave', () => area.classList.remove('drag'));
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('drag');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  input.addEventListener('change', () => handleFiles(input.files));
+}
+
+async function handleFiles(files) {
+  const arr = Array.from(files);
+  if (!arr.length) return;
+
+  const cat = document.getElementById('uploadCat').value;
+  const caption = document.getElementById('uploadCaption').value.trim();
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  const status = document.getElementById('uploadStatus');
+
+  bar.style.display = 'block';
+  status.className = 'upload-status';
+  status.textContent = `Uploading 0 / ${arr.length}...`;
+
+  const photos = getPhotos();
+  let done = 0;
+
+  for (const file of arr) {
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', UPLOAD_PRESET);
+      fd.append('folder', 'aslamstudioz');
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.secure_url) {
+        photos.push({ url: data.secure_url, cat, caption, public_id: data.public_id });
+        done++;
+        fill.style.width = (done / arr.length * 100) + '%';
+        status.textContent = `Uploading ${done} / ${arr.length}...`;
+      } else {
+        throw new Error(data.error?.message || 'Upload failed');
+      }
+    } catch (err) {
+      status.className = 'upload-status err';
+      status.textContent = `Error: ${err.message}. Make sure your Cloudinary upload preset is set to "Unsigned".`;
+      bar.style.display = 'none';
+      return;
+    }
+  }
+
+  savePhotos(photos);
+  renderPhotos();
+  bar.style.display = 'none';
+  status.className = 'upload-status ok';
+  status.textContent = `✅ ${done} photo(s) uploaded successfully!`;
+  document.getElementById('fileInput').value = '';
+  setTimeout(() => status.textContent = '', 4000);
+}
+
+/* ---- SERVICES ---- */
+const DEFAULT_SERVICES = [
+  { icon: '💒', name: 'Wedding Photography', desc: 'Full-day coverage of your special day.', price: 'Contact for price' },
+  { icon: '🤳', name: 'Portrait Photography', desc: 'Professional portraits for individuals & families.', price: 'Contact for price' },
+  { icon: '👶', name: 'Newborn Photography', desc: 'Tender moments captured in the first days.', price: 'Contact for price' },
+  { icon: '📦', name: 'Product Photography', desc: 'High-quality images for your business.', price: 'Contact for price' },
+  { icon: '🌿', name: 'Nature Photography', desc: 'Landscapes, wildlife & outdoor beauty.', price: 'Contact for price' },
+  { icon: '🎉', name: 'Events Photography', desc: 'Corporate, social & cultural events.', price: 'Contact for price' }
+];
+
+function getServices() {
+  return JSON.parse(localStorage.getItem('asServices') || JSON.stringify(DEFAULT_SERVICES));
+}
+
+function renderServices() {
+  const list = document.getElementById('servicesList');
+  const services = getServices();
+  list.innerHTML = '';
+  services.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'service-row';
+    row.innerHTML = `
+      <input class="icon-input" type="text" value="${s.icon}" placeholder="💒" data-i="${i}" data-f="icon" />
+      <input type="text" value="${s.name}" placeholder="Service Name" data-i="${i}" data-f="name" />
+      <input type="text" value="${s.desc}" placeholder="Description" data-i="${i}" data-f="desc" />
+      <input type="text" value="${s.price}" placeholder="e.g. Rs. 15,000" data-i="${i}" data-f="price" />
+      <button class="del-service" onclick="removeService(${i})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.i, f = e.target.dataset.f;
+      const svcs = getServices();
+      svcs[i][f] = e.target.value;
+      localStorage.setItem('asServices', JSON.stringify(svcs));
+    });
+  });
+}
+
+function addService() {
+  const svcs = getServices();
+  svcs.push({ icon: '📸', name: 'New Service', desc: 'Description here', price: 'Contact for price' });
+  localStorage.setItem('asServices', JSON.stringify(svcs));
+  renderServices();
+}
+
+function removeService(i) {
+  const svcs = getServices();
+  svcs.splice(i, 1);
+  localStorage.setItem('asServices', JSON.stringify(svcs));
+  renderServices();
+}
+
+function saveServices() {
+  const msg = document.getElementById('serviceMsg');
+  msg.textContent = '✅ Services saved!';
+  setTimeout(() => msg.textContent = '', 3000);
+}
+
+/* ---- THEME ---- */
+let selectedTheme = localStorage.getItem('asTheme') || 'auto';
+
+function renderTheme() {
+  document.querySelectorAll('.theme-opt').forEach(o => {
+    o.classList.toggle('selected', o.dataset.t === selectedTheme);
+  });
+}
+
+function selectTheme(t) {
+  selectedTheme = t;
+  renderTheme();
+}
+
+function saveTheme() {
+  localStorage.setItem('asTheme', selectedTheme);
+  const msg = document.getElementById('themeMsg');
+  msg.textContent = '✅ Theme saved!';
+  setTimeout(() => msg.textContent = '', 3000);
+}
+</script>
+</body>
+</html>
